@@ -19,4 +19,22 @@ int raw_tracepoint__sys_enter(struct bpf_raw_tracepoint_args *ctx)
 	return 0;
 }
 
+SEC("raw_tracepoint/task_rename")
+int raw_tracepoint__task_rename(struct bpf_raw_tracepoint_args *ctx)
+{
+    char *e;
+	e = bpf_ringbuf_reserve(&events, sizeof(char)*5, 0);
+    if (!e) {
+        bpf_printk("Failed");
+        return 0;
+    }
+
+    bpf_probe_read_user(e, sizeof(char)*5, (void*)ctx->args[1]);
+
+    bpf_ringbuf_submit(e, 0);
+	return 0;
+}
+
 char LICENSE[] SEC("license") = "GPL";
+
+// TP_PROTO(struct task_struct *task, const char *comm),

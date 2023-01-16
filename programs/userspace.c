@@ -15,8 +15,8 @@ static void sig_handler(int sig)
 
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
-	int *e = data;
-    printf("> %d\n", *e);
+	char *e = data;
+    printf("> %s\n", e);
 	return 0;
 }
 
@@ -35,11 +35,12 @@ int main()
 		return 1;
 	}
 
-    int rawtp_prog_fd = bpf_program__fd(first_skel->progs.raw_tracepoint__sys_enter);
+    int rawtp_prog_fd = bpf_program__fd(first_skel->progs.raw_tracepoint__task_rename);
 
     rb = ring_buffer__new(bpf_map__fd(first_skel->maps.events), handle_event, NULL, NULL);
 
-	__u64 args[2] = {0x1234ULL, 0x0045ULL};
+    char test[5] = "BBBB\n";
+	__u64 args[2] = {0x1234ULL, (__u64)test};
 
   	LIBBPF_OPTS(bpf_test_run_opts, test_run_opts,
 		.ctx_in = args,
