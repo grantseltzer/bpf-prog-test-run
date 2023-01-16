@@ -35,6 +35,19 @@ int raw_tracepoint__task_rename(struct bpf_raw_tracepoint_args *ctx)
 	return 0;
 }
 
-char LICENSE[] SEC("license") = "GPL";
+SEC("fentry/do_unlinkat")
+int BPF_PROG(fentry__do_unlinkat, int dfd, struct filename *name)
+{
+    int *e;
+	e = bpf_ringbuf_reserve(&events, sizeof(int), 0);
+    if (!e) {
+        bpf_printk("Failed");
+        return 0;
+    }
+    *e = dfd;
+    bpf_ringbuf_submit(e, 0);
 
-// TP_PROTO(struct task_struct *task, const char *comm),
+	return 0;
+}
+
+char LICENSE[] SEC("license") = "GPL";
