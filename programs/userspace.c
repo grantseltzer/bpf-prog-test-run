@@ -2,6 +2,7 @@
 #include "maps.skel.h"
 #include <signal.h>
 #include <stdio.h>
+#include <string.h>
 #include <bpf/bpf.h>
 #include <bpf/libbpf_common.h>
 #include <linux/ptrace.h>
@@ -20,12 +21,12 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
 	return 0;
 }
 
-int main()
+int main(int argc, char* argv)
 {
     signal(SIGINT, sig_handler);
 	signal(SIGTERM, sig_handler);
 
-    int err;    
+    int err;
 	struct ring_buffer *rb = NULL;
     struct progs_bpf *progs_skel;
 
@@ -35,25 +36,51 @@ int main()
 		return 1;
 	}
 
-    int rawtp_prog_fd = bpf_program__fd(progs_skel->progs.raw_tracepoint__task_rename);
-    rb = ring_buffer__new(bpf_map__fd(progs_skel->maps.events), handle_event, NULL, NULL);
+    char raw_tp_str[6] = "raw_tp", fentry_str[6] = "fentry";
 
-    char test[5] = "AAAA\n";
-	__u64 args[2] = {0x1234ULL, (__u64)test};
+    if (!strcmp(raw_tp_str, argv[1])) {
+        int raw_tp_prog_fd = bpf_program__fd(progs_skel->progs.raw_tracepoint__task_rename);
+        rb = ring_buffer__new(bpf_map__fd(progs_skel->maps.events), handle_event, NULL, NULL);
 
-  	LIBBPF_OPTS(bpf_test_run_opts, test_run_opts,
-		.ctx_in = args,
-		.ctx_size_in = sizeof(args),
-	);
+        __u64 args[2] = {0x1234ULL, (__u64)raw_tp_str};
 
-    err = bpf_prog_test_run_opts(rawtp_prog_fd, &test_run_opts);
-    if (err != 0) {
-        fprintf(stderr, "failed to test run rawtp: %d\n", err);
-        return 1;
+        LIBBPF_OPTS(bpf_test_run_opts, test_run_opts,
+            .ctx_in = args,
+            .ctx_size_in = sizeof(args),
+        );
+
+        err = bpf_prog_test_run_opts(raw_tp_prog_fd, &test_run_opts);
+        if (err != 0) {
+            fprintf(stderr, "failed to test run rawtp: %d\n", err);
+            return 1;
+        }
+
+        err = ring_buffer__poll(rb, 100);
+        if (err < 0) {
+            printf("Error polling ring buffer: %d\n", err);
+        }
     }
 
-    err = ring_buffer__poll(rb, 100);
-    if (err < 0) {
-        printf("Error polling ring buffer: %d\n", err);
+    if (!strcmp(fentry_str, argv[1])) {
+        int fentry_prog_fd = bpf_program__fd(progs_skel->progs.fentry__do_unlinkat);
+        rb = ring_buffer__new(bpf_map__fd(progs_skel->maps.events), handle_event, NULL, NULL);
+
+        __u64 args[2] = {0x1234ULL, (__u64)fentry_str};
+
+        LIBBPF_OPTS(bpf_test_run_opts, test_run_opts,
+            .ctx_in = args,
+            .ctx_size_in = sizeof(args),
+        );
+
+        err = bpf_prog_test_run_opts(fentry_prog_fd, &test_run_opts);
+        if (err != 0) {
+            fprintf(stderr, "failed to test run rawtp: %d\n", err);
+            return 1;
+        }
+
+        err = ring_buffer__poll(rb, 100);
+        if (err < 0) {
+            printf("Error polling ring buffer: %d\n", err);
+        }
     }
 }
