@@ -15,7 +15,7 @@ int raw_tracepoint__task_rename(struct bpf_raw_tracepoint_args *ctx)
         return 0;
     }
 
-    bpf_probe_read_user(e, sizeof(char)*5, (void*)ctx->args[1]);
+    bpf_probe_read_user(e, sizeof(char)*7, (void*)ctx->args[1]);
 
     bpf_ringbuf_submit(e, 0);
 	return 0;
@@ -30,7 +30,8 @@ int BPF_PROG(fentry__do_unlinkat, int dfd, struct filename *name)
         bpf_printk("Failed fentry");
         return 0;
     }
-    *e = dfd;
+
+    bpf_core_read(e, sizeof(char)*7, name->name);
     bpf_ringbuf_submit(e, 0);
 
 	return 0;
