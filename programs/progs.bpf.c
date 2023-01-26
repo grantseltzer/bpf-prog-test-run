@@ -8,7 +8,7 @@
 SEC("raw_tracepoint/task_rename")
 int raw_tracepoint__task_rename(struct bpf_raw_tracepoint_args *ctx)
 {
-    bpf_printk("Raw tracepoint\n")
+    bpf_printk("Raw tracepoint\n");
     char *e;
 	e = bpf_ringbuf_reserve(&events, sizeof(char)*7, 0);
     if (!e) {
