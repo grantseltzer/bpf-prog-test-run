@@ -65,7 +65,6 @@ int main(int argc, char** argv)
         }
     } else if (!strcmp(fentry_str, argv[1])) {
 
-        fflush(stdout);
         int fentry_prog_fd = bpf_program__fd(progs_skel->progs.fentry__do_unlinkat);
         rb = ring_buffer__new(bpf_map__fd(progs_skel->maps.events), handle_event, NULL, NULL);
 
