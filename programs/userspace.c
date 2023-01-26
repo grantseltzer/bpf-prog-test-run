@@ -14,9 +14,9 @@ static void sig_handler(int sig)
 	exiting = true;
 }
 
-static int handle_event(void *ctx, void *data, size_t data_sz)
+static int handle_string_event(void *ctx, void *data, size_t data_sz)
 {
-	char *e = data;
+	char e[7] = data;
     printf("> %s\n", e);
 	return 0;
 }
